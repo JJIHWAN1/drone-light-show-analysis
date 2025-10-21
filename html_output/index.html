@@ -1,0 +1,109 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚁 드론 라이트 쇼 검색 트렌드 분석</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .header {
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .card h3 {
+            color: #333;
+            margin-top: 0;
+        }
+        .card p {
+            color: #666;
+            line-height: 1.6;
+        }
+        .btn {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background 0.3s ease;
+        }
+        .btn:hover {
+            background: #5a67d8;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚁 드론 라이트 쇼 검색 트렌드 분석</h1>
+        <p>네이버 데이터랩 기반 지역별 검색 패턴 분석 결과</p>
+        <p>생성일: 2025년 10월 21일 00:25</p>
+    </div>
+    
+    <div class="grid">
+        <div class="card">
+            <h3>📊 메인 대시보드</h3>
+            <p>모든 분석 결과를 한 눈에 볼 수 있는 종합 대시보드입니다. 4개의 차트가 하나의 페이지에 통합되어 있습니다.</p>
+            <a href="drone_analysis_dashboard.html" class="btn">대시보드 열기</a>
+        </div>
+        
+        <div class="card">
+            <h3>📈 시계열 트렌드</h3>
+            <p>2023년부터 2025년까지 지역별 검색 트렌드를 시간 순서로 보여줍니다. 줌인/줌아웃 가능합니다.</p>
+            <a href="drone_analysis_timeseries.html" class="btn">차트 열기</a>
+        </div>
+        
+        <div class="card">
+            <h3>📅 월별 패턴</h3>
+            <p>각 지역의 월별 평균 검색 패턴을 분석합니다. 계절성과 성수기를 파악할 수 있습니다.</p>
+            <a href="drone_analysis_monthly.html" class="btn">차트 열기</a>
+        </div>
+        
+        <div class="card">
+            <h3>🔥 히트맵 분석</h3>
+            <p>월별-지역별 검색 비율을 색상으로 표현한 히트맵입니다. 패턴을 직관적으로 파악할 수 있습니다.</p>
+            <a href="drone_analysis_heatmap.html" class="btn">차트 열기</a>
+        </div>
+        
+        <div class="card">
+            <h3>📦 분포 분석</h3>
+            <p>지역별 검색 비율의 분포를 박스플롯으로 보여줍니다. 평균, 중앙값, 이상치를 확인할 수 있습니다.</p>
+            <a href="drone_analysis_boxplot.html" class="btn">차트 열기</a>
+        </div>
+        
+        <div class="card">
+            <h3>💡 사용 방법</h3>
+            <p>• 각 차트는 인터랙티브합니다 (줌, 필터링 가능)<br>
+               • 범례를 클릭하여 지역별 표시/숨김 가능<br>
+               • 마우스 호버로 상세 정보 확인<br>
+               • 오프라인에서도 사용 가능</p>
+        </div>
+    </div>
+</body>
+</html>
