@@ -107,16 +107,20 @@ def detect_peaks_cached(df):
 def main():
     """메인 앱"""
     
-    # 헤더
-    st.title("🚁 드론 라이트 쇼 검색 트렌드 분석")
-    st.markdown("### 네이버 데이터랩 기반 지역별 검색 패턴 분석")
-    
     # 데이터 로드
     with st.spinner('데이터를 로드하는 중...'):
         df = load_data()
     
-    # 사이드바 - 필터링 옵션
+    # 사이드바 - 분석 유형 선택
     st.sidebar.header("📊 분석 옵션")
+    
+    analysis_type = st.sidebar.radio(
+        "분석 유형 선택",
+        ["🔍 네이버 검색 분석", "🌐 SNS 흐름 분석"],
+        index=0
+    )
+    
+    st.sidebar.divider()
     
     # 지역 선택
     regions = df['region'].unique()
@@ -148,67 +152,72 @@ def main():
     else:
         filtered_df = df[df['region'].isin(selected_regions)]
     
-    # 메인 대시보드
-    if len(filtered_df) > 0:
+    # 분석 유형에 따른 화면 분리
+    if analysis_type == "🔍 네이버 검색 분석":
+        # 네이버 검색 분석 화면
+        st.title("🚁 드론 라이트 쇼 검색 트렌드 분석")
+        st.markdown("### 네이버 데이터랩 기반 지역별 검색 패턴 분석")
         
-        # 주요 지표 카드
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            st.metric(
-                "총 데이터 포인트",
-                f"{len(filtered_df):,}개"
-            )
-        
-        with col2:
-            max_ratio = filtered_df['ratio'].max()
-            max_region = filtered_df.loc[filtered_df['ratio'].idxmax(), 'region']
-            st.metric(
-                "최고 검색비율",
-                f"{max_ratio:.4f}",
-                f"{max_region}"
-            )
-        
-        with col3:
-            avg_ratio = filtered_df['ratio'].mean()
-            st.metric(
-                "평균 검색비율",
-                f"{avg_ratio:.4f}"
-            )
-        
-        with col4:
-            date_range_days = (filtered_df['date'].max() - filtered_df['date'].min()).days
-            st.metric(
-                "분석 기간",
-                f"{date_range_days}일"
-            )
-        
-        st.divider()
-        
-        # 탭으로 구성
-        tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-            "📈 시계열 트렌드", 
-            "📊 월별 패턴", 
-            "🔥 피크 분석", 
-            "📋 통계 요약",
-            "🎯 주요 이벤트",
-            "🌐 SNS 흐름 분석"
-        ])
-        
-        with tab1:
-            st.subheader("지역별 검색 트렌드")
+        # 메인 대시보드
+        if len(filtered_df) > 0:
             
-            # 시계열 차트
-            fig_timeseries = px.line(
-                filtered_df, 
-                x='date', 
-                y='ratio', 
-                color='region',
-                title='시간별 검색 비율 변화',
-                labels={'ratio': '검색 비율', 'date': '날짜', 'region': '지역'}
-            )
-            fig_timeseries.update_layout(height=600)
-            st.plotly_chart(fig_timeseries, use_container_width=True)
+            # 주요 지표 카드
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                st.metric(
+                    "총 데이터 포인트",
+                    f"{len(filtered_df):,}개"
+                )
+            
+            with col2:
+                max_ratio = filtered_df['ratio'].max()
+                max_region = filtered_df.loc[filtered_df['ratio'].idxmax(), 'region']
+                st.metric(
+                    "최고 검색비율",
+                    f"{max_ratio:.4f}",
+                    f"{max_region}"
+                )
+            
+            with col3:
+                avg_ratio = filtered_df['ratio'].mean()
+                st.metric(
+                    "평균 검색비율",
+                    f"{avg_ratio:.4f}"
+                )
+            
+            with col4:
+                date_range_days = (filtered_df['date'].max() - filtered_df['date'].min()).days
+                st.metric(
+                    "분석 기간",
+                    f"{date_range_days}일"
+                )
+            
+            st.divider()
+            
+            # 탭으로 구성 (SNS 흐름 분석 탭 제거)
+            tab1, tab2, tab3, tab4, tab5 = st.tabs([
+                "📈 시계열 트렌드", 
+                "📊 월별 패턴", 
+                "🔥 피크 분석", 
+                "📋 통계 요약",
+                "🎯 주요 이벤트"
+            ])
+            
+            with tab1:
+                st.subheader("지역별 검색 트렌드")
+                
+                # 시계열 차트
+                fig_timeseries = px.line(
+                    filtered_df, 
+                    x='date', 
+                    y='ratio', 
+                    color='region',
+                    title='시간별 검색 비율 변화',
+                    labels={'ratio': '검색 비율', 'date': '날짜', 'region': '지역'}
+                )
+                fig_timeseries.update_layout(height=600)
+                st.plotly_chart(fig_timeseries, use_container_width=True)
             
             # 2024년 상세 보기
             df_2024 = filtered_df[filtered_df['year'] == 2024]
