@@ -75,12 +75,12 @@ def get_basic_statistics(df):
     for region in df['region'].unique():
         region_data = df[df['region'] == region]['ratio']
         stats_dict[region] = {
-            'count': len(region_data),
-            'mean': region_data.mean(),
-            'std': region_data.std(),
-            'min': region_data.min(),
-            'max': region_data.max(),
-            'median': region_data.median(),
+            '데이터 개수 (count)': len(region_data),
+            '평균 (mean)': region_data.mean(),
+            '표준편차 (std)': region_data.std(),
+            '최소값 (min)': region_data.min(),
+            '최대값 (max)': region_data.max(),
+            '중앙값 (median)': region_data.median(),
         }
     return stats_dict
 
@@ -219,21 +219,6 @@ def main():
                 )
                 fig_timeseries.update_layout(height=600)
                 st.plotly_chart(fig_timeseries, use_container_width=True)
-            
-            # 2024년 상세 보기
-            df_2024 = filtered_df[filtered_df['year'] == 2024]
-            if len(df_2024) > 0:
-                st.subheader("2024년 상세 트렌드")
-                fig_2024 = px.line(
-                    df_2024, 
-                    x='date', 
-                    y='ratio', 
-                    color='region',
-                    title='2024년 검색 트렌드',
-                    markers=True
-                )
-                fig_2024.update_layout(height=500)
-                st.plotly_chart(fig_2024, use_container_width=True)
         
         with tab2:
             st.subheader("월별 검색 패턴")
@@ -259,7 +244,7 @@ def main():
                 monthly_pivot = monthly_avg.pivot(index='month', columns='region', values='ratio')
                 fig_heatmap = px.imshow(
                     monthly_pivot,
-                    title='월별-지역별 검색 비율 히트맵',
+                    title='월별 평균 검색 비율 히트맵',
                     labels=dict(x="지역", y="월", color="검색 비율"),
                     aspect="auto"
                 )
@@ -294,7 +279,7 @@ def main():
                 x='region',
                 y='ratio',
                 color='year',
-                title='2023~2025 연도별 네이버 검색 비율 평균',
+                title='연도별 네이버 검색 비율 평균',
                 barmode='group',
                 labels={'ratio': '평균 검색 비율', 'region': '지역'},
                 category_orders={'year': ['2023', '2024', '2025']}
@@ -394,50 +379,6 @@ def main():
                     )
                     
                     st.plotly_chart(fig_peak, use_container_width=True)
-            
-            # 네이버 검색 피크 시점 분석
-            st.markdown("### 📍 네이버 검색 피크 시점")
-            monthly_ratio = filtered_df.groupby(['region', 'year', 'month'])['ratio'].mean().reset_index()
-            peak_points = monthly_ratio.loc[monthly_ratio.groupby(['region', 'year'])['ratio'].idxmax()]
-            
-            fig_naver_peaks = go.Figure()
-            
-            for region in selected_regions:
-                region_monthly = monthly_ratio[monthly_ratio['region'] == region]
-                if len(region_monthly) > 0:
-                    fig_naver_peaks.add_trace(go.Scatter(
-                        x=region_monthly['month'],
-                        y=region_monthly['ratio'],
-                        mode='lines+markers',
-                        name=region,
-                        line=dict(width=2)
-                    ))
-                    
-                    # 피크 포인트 표시
-                    region_peaks = peak_points[peak_points['region'] == region]
-                    for _, row in region_peaks.iterrows():
-                        fig_naver_peaks.add_annotation(
-                            x=row['month'],
-                            y=row['ratio'],
-                            text=f"{int(row['year'])}년",
-                            showarrow=True,
-                            arrowhead=2,
-                            arrowsize=1,
-                            arrowwidth=2,
-                            arrowcolor='red',
-                            ax=20,
-                            ay=-30
-                        )
-            
-            fig_naver_peaks.update_layout(
-                title='2023~2025 지역별 네이버 검색 피크 시점 비교',
-                xaxis_title='월',
-                yaxis_title='검색 비율',
-                height=500,
-                xaxis=dict(dtick=1)
-            )
-            
-            st.plotly_chart(fig_naver_peaks, use_container_width=True)
         
         with tab4:
             st.subheader("통계 요약")
@@ -450,43 +391,51 @@ def main():
             stats_df = stats_df.round(6)
             st.dataframe(stats_df, use_container_width=True)
             
-            # 분포 차트
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                fig_box = px.box(
-                    filtered_df,
-                    x='region',
-                    y='ratio',
-                    title='지역별 검색 비율 분포'
-                )
-                st.plotly_chart(fig_box, use_container_width=True)
-            
-            with col2:
-                fig_violin = px.violin(
-                    filtered_df,
-                    x='region',
-                    y='ratio',
-                    title='지역별 검색 비율 분포 (상세)'
-                )
-                st.plotly_chart(fig_violin, use_container_width=True)
+            # 통계 항목 설명
+            st.markdown("""
+            **통계 항목 설명:**
+            - **데이터 개수 (count)**: 분석 대상 데이터의 총 개수
+            - **평균 (mean)**: 검색 비율의 평균값
+            - **표준편차 (std)**: 데이터의 펼져있는 정도 (변동성)
+            - **최소값 (min)**: 가장 낮은 검색 비율
+            - **최대값 (max)**: 가장 높은 검색 비율
+            - **중앙값 (median)**: 데이터를 정렬했을 때 중간에 위치한 값
+            """)
             
         with tab5:
             st.subheader("주요 이벤트 및 인사이트")
             
-            # 최고 검색 기록들
-            top_records = filtered_df.nlargest(10, 'ratio')
-            
-            st.write("**🏆 상위 10개 검색 기록**")
-            for idx, row in top_records.iterrows():
-                with st.container():
-                    col1, col2, col3 = st.columns([2, 2, 1])
-                    with col1:
-                        st.write(f"**{row['region']}**")
-                    with col2:
-                        st.write(f"{row['date'].strftime('%Y년 %m월 %d일')}")
-                    with col3:
-                        st.write(f"**{row['ratio']:.4f}**")
+            # 최고 검색 기록들 - 지역별로 분리 표시
+            if len(selected_regions) >= 2:
+                st.write("**🏆 지역별 상위 10개 검색 기록**")
+                for region in selected_regions:
+                    region_data = filtered_df[filtered_df['region'] == region]
+                    top_records = region_data.nlargest(10, 'ratio')
+                    
+                    if len(top_records) > 0:
+                        st.write(f"\n**{region}**")
+                        for idx, row in top_records.iterrows():
+                            with st.container():
+                                col1, col2, col3 = st.columns([2, 2, 1])
+                                with col1:
+                                    st.write(f"{row['date'].strftime('%Y년 %m월 %d일')}")
+                                with col2:
+                                    st.write(f"검색 비율: **{row['ratio']:.4f}**")
+                        st.divider()
+            else:
+                # 단일 지역 선택 시 기존 방식
+                top_records = filtered_df.nlargest(10, 'ratio')
+                
+                st.write("**🏆 상위 10개 검색 기록**")
+                for idx, row in top_records.iterrows():
+                    with st.container():
+                        col1, col2, col3 = st.columns([2, 2, 1])
+                        with col1:
+                            st.write(f"**{row['region']}**")
+                        with col2:
+                            st.write(f"{row['date'].strftime('%Y년 %m월 %d일')}")
+                        with col3:
+                            st.write(f"**{row['ratio']:.4f}**")
             
             # 월별 최고 기록
             st.write("**📅 월별 최고 검색 기록**")
