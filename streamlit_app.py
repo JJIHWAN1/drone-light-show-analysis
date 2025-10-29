@@ -273,6 +273,48 @@ def main():
                 barmode='group'
             )
             st.plotly_chart(fig_seasonal, use_container_width=True)
+            
+            # 네이버 검색 연도별 비교
+            st.markdown("### 📊 네이버 검색 연도별 비교")
+            yearly_ratio = filtered_df.groupby(['region', 'year'])['ratio'].mean().reset_index()
+            yearly_ratio['year'] = yearly_ratio['year'].astype(str)
+            
+            fig_naver_yearly = px.bar(
+                yearly_ratio,
+                x='region',
+                y='ratio',
+                color='year',
+                title='2023~2025 연도별 네이버 검색 비율 평균',
+                barmode='group',
+                labels={'ratio': '평균 검색 비율', 'region': '지역'},
+                category_orders={'year': ['2023', '2024', '2025']}
+            )
+            fig_naver_yearly.update_layout(height=500)
+            st.plotly_chart(fig_naver_yearly, use_container_width=True)
+            
+            # 네이버 검색 월별 트렌드 (지역별)
+            st.markdown("### 📈 네이버 검색 월별 트렌드 (지역별)")
+            monthly_ratio = filtered_df.groupby(['region', 'year', 'month'])['ratio'].mean().reset_index()
+            
+            for region in selected_regions:
+                region_monthly = monthly_ratio[monthly_ratio['region'] == region]
+                if len(region_monthly) > 0:
+                    region_monthly = region_monthly.copy()
+                    region_monthly['year_str'] = region_monthly['year'].astype(str)
+                    
+                    fig_naver_region = px.line(
+                        region_monthly,
+                        x='month',
+                        y='ratio',
+                        color='year_str',
+                        title=f'{region} 월별 네이버 검색 트렌드',
+                        markers=True,
+                        labels={'ratio': '검색 비율', 'month': '월', 'year_str': '연도'},
+                        category_orders={'year_str': ['2023', '2024', '2025']}
+                    )
+                    fig_naver_region.update_xaxes(dtick=1)
+                    fig_naver_region.update_layout(height=400)
+                    st.plotly_chart(fig_naver_region, use_container_width=True)
         
         with tab3:
             st.subheader("주요 검색 피크 분석")
@@ -342,6 +384,50 @@ def main():
                     )
                     
                     st.plotly_chart(fig_peak, use_container_width=True)
+            
+            # 네이버 검색 피크 시점 분석
+            st.markdown("### 📍 네이버 검색 피크 시점")
+            monthly_ratio = filtered_df.groupby(['region', 'year', 'month'])['ratio'].mean().reset_index()
+            peak_points = monthly_ratio.loc[monthly_ratio.groupby(['region', 'year'])['ratio'].idxmax()]
+            
+            fig_naver_peaks = go.Figure()
+            
+            for region in selected_regions:
+                region_monthly = monthly_ratio[monthly_ratio['region'] == region]
+                if len(region_monthly) > 0:
+                    fig_naver_peaks.add_trace(go.Scatter(
+                        x=region_monthly['month'],
+                        y=region_monthly['ratio'],
+                        mode='lines+markers',
+                        name=region,
+                        line=dict(width=2)
+                    ))
+                    
+                    # 피크 포인트 표시
+                    region_peaks = peak_points[peak_points['region'] == region]
+                    for _, row in region_peaks.iterrows():
+                        fig_naver_peaks.add_annotation(
+                            x=row['month'],
+                            y=row['ratio'],
+                            text=f"{int(row['year'])}년",
+                            showarrow=True,
+                            arrowhead=2,
+                            arrowsize=1,
+                            arrowwidth=2,
+                            arrowcolor='red',
+                            ax=20,
+                            ay=-30
+                        )
+            
+            fig_naver_peaks.update_layout(
+                title='2023~2025 지역별 네이버 검색 피크 시점 비교',
+                xaxis_title='월',
+                yaxis_title='검색 비율',
+                height=500,
+                xaxis=dict(dtick=1)
+            )
+            
+            st.plotly_chart(fig_naver_peaks, use_container_width=True)
         
         with tab4:
             st.subheader("통계 요약")
@@ -460,6 +546,8 @@ def main():
                 # 1. 연도별 언급량 비교
                 st.markdown("### 📊 연도별 SNS 언급량 비교")
                 yearly_counts = sns_filtered.groupby(['region', 'year']).size().reset_index(name='count')
+                # year를 문자열로 변환하여 범례에 2023, 2024, 2025가 따로 표시되도록 함
+                yearly_counts['year'] = yearly_counts['year'].astype(str)
                 fig_yearly = px.bar(
                     yearly_counts,
                     x='region',
@@ -467,9 +555,9 @@ def main():
                     color='year',
                     title='2023~2025 연도별 SNS 언급량',
                     barmode='group',
-                    text='count'
+                    category_orders={'year': ['2023', '2024', '2025']}
                 )
-                fig_yearly.update_traces(texttemplate='%{text}', textposition='outside')
+                # 막대 위 숫자 제거
                 fig_yearly.update_layout(height=500)
                 st.plotly_chart(fig_yearly, use_container_width=True)
                 
@@ -507,6 +595,29 @@ def main():
                     )
                     fig_peak.update_traces(textposition='top center')
                     st.plotly_chart(fig_peak, use_container_width=True)
+                
+                # 지역별 월별 트렌드 상세
+                st.markdown("#### 지역별 월별 트렌드 상세")
+                for region in selected_regions:
+                    region_monthly = monthly_counts[monthly_counts['region'] == region]
+                    if len(region_monthly) > 0:
+                        # year를 문자열로 변환
+                        region_monthly = region_monthly.copy()
+                        region_monthly['year_str'] = region_monthly['year'].astype(str)
+                        
+                        fig_region = px.line(
+                            region_monthly,
+                            x='month',
+                            y='count',
+                            color='year_str',
+                            title=f'{region} 월별 SNS 트렌드',
+                            markers=True,
+                            labels={'count': '언급량(건)', 'month': '월', 'year_str': '연도'},
+                            category_orders={'year_str': ['2023', '2024', '2025']}
+                        )
+                        fig_region.update_xaxes(dtick=1)
+                        fig_region.update_layout(height=400)
+                        st.plotly_chart(fig_region, use_container_width=True)
                 
                 # 3. 플랫폼별 비중
                 st.markdown("### 💬 플랫폼별 언급 비중")
