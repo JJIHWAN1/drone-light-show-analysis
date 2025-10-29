@@ -677,7 +677,7 @@ def main():
     st.markdown("""
     <div style='text-align: center; color: gray;'>
         🚁 드론 라이트 쇼 검색 트렌드 분석 대시보드<br>
-        데이터 출처: 네이버 데이터랩 | 분석 도구: Python, Streamlit, Plotly
+        데이터 출처: 네이버 데이터랩, SNS 분석 | 분석 도구: Python, Streamlit, Plotly
     </div>
     """, unsafe_allow_html=True)
 
