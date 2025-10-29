@@ -488,8 +488,6 @@ def main():
                         avg_views = sns_filtered[sns_filtered['platform'] == 'youtube']['views'].mean()
                         st.metric("평균 조회수", f"{avg_views:,.0f}")
                 
-                st.divider()
-                
                 # 1. 연도별 언급량 비교
                 st.markdown("### 📊 연도별 SNS 언급량 비교")
                 yearly_counts = sns_filtered.groupby(['region', 'year']).size().reset_index(name='count')
@@ -512,36 +510,34 @@ def main():
                 st.markdown("### 📈 월별 SNS 언급 트렌드")
                 monthly_counts = sns_filtered.groupby(['region', 'year', 'month']).size().reset_index(name='count')
                 
-                col1, col2 = st.columns(2)
+                # 전체 월별 트렌드
+                fig_monthly_line = px.line(
+                    monthly_counts,
+                    x='month',
+                    y='count',
+                    color='region',
+                    line_dash='year',
+                    title='월별 언급량 추이',
+                    markers=True
+                )
+                fig_monthly_line.update_xaxes(dtick=1)
+                fig_monthly_line.update_layout(height=500)
+                st.plotly_chart(fig_monthly_line, use_container_width=True)
                 
-                with col1:
-                    # 전체 월별 트렌드
-                    fig_monthly_line = px.line(
-                        monthly_counts,
-                        x='month',
-                        y='count',
-                        color='region',
-                        line_dash='year',
-                        title='월별 언급량 추이',
-                        markers=True
-                    )
-                    fig_monthly_line.update_xaxes(dtick=1)
-                    st.plotly_chart(fig_monthly_line, use_container_width=True)
-                
-                with col2:
-                    # 피크 시점 표시
-                    peak_months = monthly_counts.loc[monthly_counts.groupby(['region', 'year'])['count'].idxmax()]
-                    fig_peak = px.scatter(
-                        peak_months,
-                        x='month',
-                        y='count',
-                        color='region',
-                        size='count',
-                        title='피크 시점 분석',
-                        text='year'
-                    )
-                    fig_peak.update_traces(textposition='top center')
-                    st.plotly_chart(fig_peak, use_container_width=True)
+                # 피크 시점 표시
+                peak_months = monthly_counts.loc[monthly_counts.groupby(['region', 'year'])['count'].idxmax()]
+                fig_peak = px.scatter(
+                    peak_months,
+                    x='month',
+                    y='count',
+                    color='region',
+                    size='count',
+                    title='피크 시점 분석',
+                    text='year'
+                )
+                fig_peak.update_traces(textposition='top center')
+                fig_peak.update_layout(height=500)
+                st.plotly_chart(fig_peak, use_container_width=True)
                 
                 # 지역별 월별 트렌드 상세
                 st.markdown("#### 지역별 월별 트렌드 상세")
