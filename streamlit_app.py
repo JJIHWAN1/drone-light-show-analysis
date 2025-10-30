@@ -208,6 +208,13 @@ def main():
             with tab1:
                 st.subheader("지역별 검색 트렌드")
                 
+                # 지역별 색상 매핑
+                region_colors = {
+                    '고흥·녹동항': '#636EFA',  # 파란색
+                    '당진·삽교호': '#EF553B',  # 빨간색
+                    '부산·광안리': '#00CC96'   # 초록색
+                }
+                
                 # 시계열 차트
                 fig_timeseries = px.line(
                     filtered_df, 
@@ -215,7 +222,8 @@ def main():
                     y='ratio', 
                     color='region',
                     title='시간별 검색 비율 변화',
-                    labels={'ratio': '검색 비율', 'date': '날짜', 'region': '지역'}
+                    labels={'ratio': '검색 비율', 'date': '날짜', 'region': '지역'},
+                    color_discrete_map=region_colors
                 )
                 fig_timeseries.update_layout(height=600)
                 st.plotly_chart(fig_timeseries, use_container_width=True)
@@ -276,6 +284,13 @@ def main():
             col1, col2 = st.columns(2)
             
             with col1:
+                # 지역별 색상 매핑
+                region_colors = {
+                    '고흥·녹동항': '#636EFA',  # 파란색
+                    '당진·삽교호': '#EF553B',  # 빨간색
+                    '부산·광안리': '#00CC96'   # 초록색
+                }
+                
                 # 월별 평균
                 monthly_avg = filtered_df.groupby(['month', 'region'])['ratio'].mean().reset_index()
                 fig_monthly = px.line(
@@ -284,7 +299,8 @@ def main():
                     y='ratio', 
                     color='region',
                     title='월별 평균 검색 비율 (원본 데이터)',
-                    markers=True
+                    markers=True,
+                    color_discrete_map=region_colors
                 )
                 fig_monthly.update_xaxes(dtick=1)
                 st.plotly_chart(fig_monthly, use_container_width=True)
@@ -309,6 +325,13 @@ def main():
             filtered_df_season = filtered_df.copy()
             filtered_df_season['season'] = filtered_df_season['month'].map(season_map)
             
+            # 지역별 색상 매핑
+            region_colors = {
+                '고흥·녹동항': '#636EFA',  # 파란색
+                '당진·삽교호': '#EF553B',  # 빨간색
+                '부산·광안리': '#00CC96'   # 초록색
+            }
+            
             seasonal_avg = filtered_df_season.groupby(['season', 'region'])['ratio'].mean().reset_index()
             fig_seasonal = px.bar(
                 seasonal_avg,
@@ -316,7 +339,8 @@ def main():
                 y='ratio',
                 color='region',
                 title='계절별 평균 검색 비율',
-                barmode='group'
+                barmode='group',
+                color_discrete_map=region_colors
             )
             st.plotly_chart(fig_seasonal, use_container_width=True)
         
@@ -522,38 +546,29 @@ def main():
             with sns_tab1:
                 st.subheader("시계열 SNS 언급량 분석")
                 
-                # 플랫폼별 일별 언급량 추이
-                st.markdown("#### 📈 플랫폼별 일별 언급량 추이")
+                # 전체 일별 언급량 추이
+                st.markdown("#### 📈 일별 언급량 추이 (블로그 + 유튜브)")
                 
-                # 블로그 일별 트렌드
-                blog_data = sns_filtered[sns_filtered['platform'] == 'blog'].copy()
-                if len(blog_data) > 0:
-                    blog_daily = blog_data.groupby(['date', 'region']).size().reset_index(name='count')
-                    fig_blog = px.line(
-                        blog_daily,
-                        x='date',
-                        y='count',
-                        color='region',
-                        title='블로그 일별 언급량 변화',
-                        labels={'date': '날짜', 'count': '언급량(건)', 'region': '지역'}
-                    )
-                    fig_blog.update_layout(height=500)
-                    st.plotly_chart(fig_blog, use_container_width=True)
+                # 지역별 색상 매핑 (네이버 검색 분석과 동일)
+                region_colors = {
+                    '고흥·녹동항': '#636EFA',  # 파란색
+                    '당진·삽교호': '#EF553B',  # 빨간색
+                    '부산·광안리': '#00CC96'   # 초록색
+                }
                 
-                # 유튜브 일별 트렌드
-                youtube_data_time = sns_filtered[sns_filtered['platform'] == 'youtube'].copy()
-                if len(youtube_data_time) > 0:
-                    youtube_daily = youtube_data_time.groupby(['date', 'region']).size().reset_index(name='count')
-                    fig_youtube = px.line(
-                        youtube_daily,
-                        x='date',
-                        y='count',
-                        color='region',
-                        title='유튜브 일별 언급량 변화',
-                        labels={'date': '날짜', 'count': '언급량(건)', 'region': '지역'}
-                    )
-                    fig_youtube.update_layout(height=500)
-                    st.plotly_chart(fig_youtube, use_container_width=True)
+                # 전체 플랫폼 일별 데이터
+                sns_daily = sns_filtered.groupby(['date', 'region']).size().reset_index(name='count')
+                fig_sns_daily = px.line(
+                    sns_daily,
+                    x='date',
+                    y='count',
+                    color='region',
+                    title='일별 SNS 언급량 변화 (블로그 + 유튜브)',
+                    labels={'date': '날짜', 'count': '언급량(건)', 'region': '지역'},
+                    color_discrete_map=region_colors
+                )
+                fig_sns_daily.update_layout(height=600)
+                st.plotly_chart(fig_sns_daily, use_container_width=True)
                 
                 # 연도별 비교
                 st.markdown("#### 📊 연도별 SNS 언급량 비교")
@@ -582,11 +597,11 @@ def main():
                 # 지역별/연도별로 구분 가능하게 그래프 생성
                 fig_monthly_line = go.Figure()
                 
-                # 색상과 마커 정의 (같은 지역은 같은 색, 다른 연도는 다른 모양)
+                # 색상과 마커 정의 (네이버 검색 분석과 동일한 색상)
                 color_map = {
-                    '고흥·녹동항': '#1f77b4',  # 파란색
-                    '당진·삽교호': '#ff7f0e',  # 주황색
-                    '부산·광안리': '#d62728'   # 빨간색
+                    '고흥·녹동항': '#636EFA',  # 파란색
+                    '당진·삽교호': '#EF553B',  # 빨간색
+                    '부산·광안리': '#00CC96'   # 초록색
                 }
                 
                 marker_symbols = {'2023': 'circle', '2024': 'square', '2025': 'diamond'}
