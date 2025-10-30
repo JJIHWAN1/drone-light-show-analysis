@@ -273,17 +273,6 @@ def main():
         with tab2:
             st.subheader("월별 검색 패턴")
             
-            # 데이터 해석 안내 (맨 위로 이동)
-            st.info("""
-            **📊 데이터 해석 안내**
-            
-            모든 차트는 네이버 데이터랩의 원본 값을 사용합니다. 
-            
-            • 부산·광안리는 고흥·녹동항보다 약 19배 많은 검색량을 기록합니다.
-            • 차트에서 부산이 압도적으로 높게 표시되는 것은 실제 검색량 차이를 반영한 것입니다.
-            • 개별 지역만 선택하면 해당 지역의 월별 패턴을 더 명확히 확인할 수 있습니다.
-            """)
-            
             col1, col2 = st.columns(2)
             
             with col1:
@@ -531,7 +520,43 @@ def main():
             ])
             
             with sns_tab1:
-                st.subheader("연도별 SNS 언급량 비교")
+                st.subheader("시계열 SNS 언급량 분석")
+                
+                # 플랫폼별 일별 언급량 추이
+                st.markdown("#### 📈 플랫폼별 일별 언급량 추이")
+                
+                # 블로그 일별 트렌드
+                blog_data = sns_filtered[sns_filtered['platform'] == 'blog'].copy()
+                if len(blog_data) > 0:
+                    blog_daily = blog_data.groupby(['date', 'region']).size().reset_index(name='count')
+                    fig_blog = px.line(
+                        blog_daily,
+                        x='date',
+                        y='count',
+                        color='region',
+                        title='블로그 일별 언급량 변화',
+                        labels={'date': '날짜', 'count': '언급량(건)', 'region': '지역'}
+                    )
+                    fig_blog.update_layout(height=500)
+                    st.plotly_chart(fig_blog, use_container_width=True)
+                
+                # 유튜브 일별 트렌드
+                youtube_data_time = sns_filtered[sns_filtered['platform'] == 'youtube'].copy()
+                if len(youtube_data_time) > 0:
+                    youtube_daily = youtube_data_time.groupby(['date', 'region']).size().reset_index(name='count')
+                    fig_youtube = px.line(
+                        youtube_daily,
+                        x='date',
+                        y='count',
+                        color='region',
+                        title='유튜브 일별 언급량 변화',
+                        labels={'date': '날짜', 'count': '언급량(건)', 'region': '지역'}
+                    )
+                    fig_youtube.update_layout(height=500)
+                    st.plotly_chart(fig_youtube, use_container_width=True)
+                
+                # 연도별 비교
+                st.markdown("#### 📊 연도별 SNS 언급량 비교")
                 yearly_counts = sns_filtered.groupby(['region', 'year']).size().reset_index(name='count')
                 yearly_counts['year'] = yearly_counts['year'].astype(str)
                 fig_yearly = px.bar(
@@ -541,6 +566,7 @@ def main():
                     color='year',
                     title='2023~2025 연도별 SNS 언급량',
                     barmode='group',
+                    labels={'region': '지역', 'count': '언급량(건)', 'year': '연도'},
                     category_orders={'year': ['2023', '2024', '2025']}
                 )
                 fig_yearly.update_layout(height=500)
@@ -556,11 +582,11 @@ def main():
                 # 지역별/연도별로 구분 가능하게 그래프 생성
                 fig_monthly_line = go.Figure()
                 
-                # 색상 팔레트 정의
+                # 색상과 마커 정의 (같은 지역은 같은 색, 다른 연도는 다른 모양)
                 color_map = {
-                    '고흥·녹동항': ['#1f77b4', '#aec7e8', '#6baed6'],  # 파란색 계열
-                    '당진·삽교호': ['#ff7f0e', '#ffbb78', '#ff9f40'],  # 주황색 계열
-                    '부산·광안리': ['#d62728', '#ff9896', '#ff6b6b']   # 빨간색 계열
+                    '고흥·녹동항': '#1f77b4',  # 파란색
+                    '당진·삽교호': '#ff7f0e',  # 주황색
+                    '부산·광안리': '#d62728'   # 빨간색
                 }
                 
                 marker_symbols = {'2023': 'circle', '2024': 'square', '2025': 'diamond'}
@@ -568,9 +594,9 @@ def main():
                 
                 for region in selected_regions:
                     region_data = monthly_counts[monthly_counts['region'] == region]
-                    colors = color_map.get(region, ['#333333', '#666666', '#999999'])
+                    region_color = color_map.get(region, '#333333')
                     
-                    for idx, year_val in enumerate(['2023', '2024', '2025']):
+                    for year_val in ['2023', '2024', '2025']:
                         year_data = region_data[region_data['year'] == int(year_val)]
                         if len(year_data) > 0:
                             fig_monthly_line.add_trace(go.Scatter(
@@ -579,7 +605,7 @@ def main():
                                 mode='lines+markers',
                                 name=f'{region} ({year_val})',
                                 marker=dict(size=10, symbol=marker_symbols[year_val]),
-                                line=dict(dash=dash_styles[year_val], width=2.5, color=colors[idx])
+                                line=dict(dash=dash_styles[year_val], width=2.5, color=region_color)
                             ))
                 
                 fig_monthly_line.update_xaxes(dtick=1, title='월')
