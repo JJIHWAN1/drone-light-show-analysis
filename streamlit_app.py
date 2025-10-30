@@ -550,19 +550,75 @@ def main():
                 st.subheader("월별 SNS 언급 패턴")
                 monthly_counts = sns_filtered.groupby(['region', 'year', 'month']).size().reset_index(name='count')
                 
-                # 전체 월별 트렌드
-                fig_monthly_line = px.line(
-                    monthly_counts,
-                    x='month',
-                    y='count',
-                    color='region',
-                    line_dash='year',
-                    title='월별 언급량 추이',
-                    markers=True
+                # 전체 월별 트렌드 (개선된 버전)
+                st.markdown("#### 월별 언급량 추이")
+                
+                # 지역별/연도별로 구분 가능하게 그래프 생성
+                fig_monthly_line = go.Figure()
+                
+                # 색상 팔레트 정의
+                color_map = {
+                    '고흥·녹동항': ['#1f77b4', '#aec7e8', '#6baed6'],  # 파란색 계열
+                    '당진·삽교호': ['#ff7f0e', '#ffbb78', '#ff9f40'],  # 주황색 계열
+                    '부산·광안리': ['#d62728', '#ff9896', '#ff6b6b']   # 빨간색 계열
+                }
+                
+                marker_symbols = {'2023': 'circle', '2024': 'square', '2025': 'diamond'}
+                dash_styles = {'2023': 'solid', '2024': 'dash', '2025': 'dot'}
+                
+                for region in selected_regions:
+                    region_data = monthly_counts[monthly_counts['region'] == region]
+                    colors = color_map.get(region, ['#333333', '#666666', '#999999'])
+                    
+                    for idx, year_val in enumerate(['2023', '2024', '2025']):
+                        year_data = region_data[region_data['year'] == int(year_val)]
+                        if len(year_data) > 0:
+                            fig_monthly_line.add_trace(go.Scatter(
+                                x=year_data['month'],
+                                y=year_data['count'],
+                                mode='lines+markers',
+                                name=f'{region} ({year_val})',
+                                marker=dict(size=10, symbol=marker_symbols[year_val]),
+                                line=dict(dash=dash_styles[year_val], width=2.5, color=colors[idx])
+                            ))
+                
+                fig_monthly_line.update_xaxes(dtick=1, title='월')
+                fig_monthly_line.update_yaxes(title='언급량(건)')
+                fig_monthly_line.update_layout(
+                    title='월별 언급량 추이 (지역별·연도별)',
+                    height=600,
+                    hovermode='x unified',
+                    legend=dict(
+                        orientation="v",
+                        yanchor="top",
+                        y=1,
+                        xanchor="left",
+                        x=1.02
+                    )
                 )
-                fig_monthly_line.update_xaxes(dtick=1)
-                fig_monthly_line.update_layout(height=500)
                 st.plotly_chart(fig_monthly_line, use_container_width=True)
+                
+                # 그래프 해석 가이드
+                st.info("""
+                **📊 그래프 해석 가이드**
+                
+                **선 스타일:**
+                - 실선(─): 2023년
+                - 점선(- -): 2024년
+                - 점점선(···): 2025년
+                
+                **마커 모양:**
+                - ● (원): 2023년
+                - ■ (사각형): 2024년
+                - ◆ (다이아몬드): 2025년
+                
+                **색상:**
+                - 파란색 계열: 고흥·녹동항
+                - 주황색 계열: 당진·삽교호
+                - 빨간색 계열: 부산·광안리
+                
+                💡 2023~2025년 3개년의 동일 월 데이터를 모두 합쳐서 평균낸 값입니다. 예: 1월 = 2023년 1월 + 2024년 1월 + 2025년 1월의 모든 일별 데이터 평균
+                """)
                 
                 # 지역별 월별 트렌드 상세
                 st.markdown("#### 지역별 월별 트렌드 상세")
