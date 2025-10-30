@@ -304,6 +304,7 @@ def main():
                 )
                 fig_monthly.update_xaxes(dtick=1)
                 st.plotly_chart(fig_monthly, use_container_width=True)
+                st.caption("💡 2023~2025년 3개년의 동일 월 데이터를 모두 합쳐서 평균낸 값입니다.")
             
             with col2:
                 # 히트맵
@@ -620,6 +621,7 @@ def main():
                 fig_monthly_sns.update_xaxes(dtick=1)
                 fig_monthly_sns.update_layout(height=500)
                 st.plotly_chart(fig_monthly_sns, use_container_width=True)
+                st.caption("💡 2023~2025년 3개년의 동일 월 데이터를 모두 합쳐서 평균낸 값입니다.")
                 
                 # 지역별 월별 트렌드 상세 (연도별 비교)
                 st.markdown("#### 지역별 월별 트렌드 상세 (연도별)")
