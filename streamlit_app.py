@@ -219,6 +219,24 @@ def main():
                 )
                 fig_timeseries.update_layout(height=600)
                 st.plotly_chart(fig_timeseries, use_container_width=True)
+                
+                # 연도별 비교
+                st.markdown("### 📊 네이버 검색 연도별 비교")
+                yearly_ratio = filtered_df.groupby(['region', 'year'])['ratio'].mean().reset_index()
+                yearly_ratio['year'] = yearly_ratio['year'].astype(str)
+                
+                fig_naver_yearly = px.bar(
+                    yearly_ratio,
+                    x='region',
+                    y='ratio',
+                    color='year',
+                    title='연도별 네이버 검색 비율 평균',
+                    barmode='group',
+                    labels={'ratio': '평균 검색 비율', 'region': '지역'},
+                    category_orders={'year': ['2023', '2024', '2025']}
+                )
+                fig_naver_yearly.update_layout(height=500)
+                st.plotly_chart(fig_naver_yearly, use_container_width=True)
         
         with tab2:
             st.subheader("월별 검색 패턴")
@@ -269,23 +287,12 @@ def main():
             )
             st.plotly_chart(fig_seasonal, use_container_width=True)
             
-            # 네이버 검색 연도별 비교
-            st.markdown("### 📊 네이버 검색 연도별 비교")
-            yearly_ratio = filtered_df.groupby(['region', 'year'])['ratio'].mean().reset_index()
-            yearly_ratio['year'] = yearly_ratio['year'].astype(str)
-            
-            fig_naver_yearly = px.bar(
-                yearly_ratio,
-                x='region',
-                y='ratio',
-                color='year',
-                title='연도별 네이버 검색 비율 평균',
-                barmode='group',
-                labels={'ratio': '평균 검색 비율', 'region': '지역'},
-                category_orders={'year': ['2023', '2024', '2025']}
-            )
-            fig_naver_yearly.update_layout(height=500)
-            st.plotly_chart(fig_naver_yearly, use_container_width=True)
+            # 검색 비율 계산 방법 설명
+            st.info("""
+            **📊 검색 비율 계산 방법**  
+            네이버 데이터랩의 검색 비율은 특정 기간 동안 해당 키워드의 검색량을 0~100 사이의 상대적 값으로 표현한 것입니다.  
+            가장 높은 검색량을 100으로 보았을 때의 상대적 비율로, 지역별·기간별 검색 관심도를 비교할 수 있습니다.
+            """)
             
             # 네이버 검색 월별 트렌드 (지역별)
             st.markdown("### 📈 네이버 검색 월별 트렌드 (지역별)")
@@ -401,7 +408,6 @@ def main():
             **통계 항목 설명:**
             - **데이터 개수 (count)**: 분석 대상 데이터의 총 개수
             - **평균 (mean)**: 검색 비율의 평균값
-            - **표준편차 (std)**: 데이터의 펼져있는 정도 (변동성)
             - **최소값 (min)**: 가장 낮은 검색 비율
             - **최대값 (max)**: 가장 높은 검색 비율
             - **중앙값 (median)**: 데이터를 정렬했을 때 중간에 위치한 값
@@ -442,16 +448,15 @@ def main():
                         with col3:
                             st.write(f"**{row['ratio']:.4f}**")
             
-            # 월별 최고 기록
+            # 월별 최고 기록 (수정: 월별 평균 기준)
             st.write("**📅 월별 최고 검색 기록**")
-            monthly_max = filtered_df.loc[filtered_df.groupby(['region', 'month'])['ratio'].idxmax()]
-            monthly_summary = monthly_max.groupby('region')['month'].apply(
-                lambda x: x.value_counts().index[0]
-            ).reset_index()
-            monthly_summary.columns = ['지역', '최고_검색_월']
+            monthly_avg_by_region = filtered_df.groupby(['region', 'month'])['ratio'].mean().reset_index()
             
-            for _, row in monthly_summary.iterrows():
-                st.write(f"• **{row['지역']}**: {row['최고_검색_월']}월이 성수기")
+            for region in selected_regions:
+                region_monthly = monthly_avg_by_region[monthly_avg_by_region['region'] == region]
+                if len(region_monthly) > 0:
+                    peak_month = region_monthly.loc[region_monthly['ratio'].idxmax()]
+                    st.write(f"• **{region}**: {int(peak_month['month'])}월이 성수기 (평균 검색비율: {peak_month['ratio']:.4f})")
     
     else:
         # SNS 흐름 분석 화면
@@ -615,25 +620,36 @@ def main():
             with sns_tab4:
                 st.subheader("SNS 기본 통계")
                 
-                # 지역별 통계
+                # 지역별 통계 - 표 형식으로 변경
+                sns_stats_dict = {}
                 for region in selected_regions:
                     region_data = sns_filtered[sns_filtered['region'] == region]
                     if len(region_data) > 0:
-                        st.markdown(f"### {region}")
-                        
-                        col1, col2, col3 = st.columns(3)
-                        with col1:
-                            st.metric("총 언급 수", f"{len(region_data):,}건")
-                        with col2:
-                            blog_pct = len(region_data[region_data['platform'] == 'blog']) / len(region_data) * 100
-                            st.metric("블로그 비율", f"{blog_pct:.1f}%")
-                        with col3:
-                            youtube_pct = len(region_data[region_data['platform'] == 'youtube']) / len(region_data) * 100
-                            st.metric("유튜브 비율", f"{youtube_pct:.1f}%")
-                        
-                        # 월별 평균
+                        blog_count = len(region_data[region_data['platform'] == 'blog'])
+                        youtube_count = len(region_data[region_data['platform'] == 'youtube'])
                         monthly_avg = region_data.groupby('month').size().mean()
-                        st.write(f"월평균 언급량: **{monthly_avg:.1f}건**")
+                        
+                        sns_stats_dict[region] = {
+                            '데이터 개수 (count)': len(region_data),
+                            '블로그 언급 수': blog_count,
+                            '유튜브 언급 수': youtube_count,
+                            '블로그 비율 (%)': round(blog_count / len(region_data) * 100, 1),
+                            '유튜브 비율 (%)': round(youtube_count / len(region_data) * 100, 1),
+                            '월평균 언급량': round(monthly_avg, 1)
+                        }
+                
+                # 통계 테이블 표시
+                if sns_stats_dict:
+                    sns_stats_df = pd.DataFrame(sns_stats_dict).T
+                    st.dataframe(sns_stats_df, use_container_width=True)
+                    
+                    st.markdown("""
+                    **통계 항목 설명:**
+                    - **데이터 개수 (count)**: 총 SNS 언급 수
+                    - **블로그/유튜브 언급 수**: 플랫폼별 언급 건수
+                    - **블로그/유튜브 비율**: 전체 언급 중 각 플랫폼이 차지하는 비율
+                    - **월평균 언급량**: 한 달 평균 SNS 언급 건수
+                    """)
             
             with sns_tab5:
                 st.subheader("플랫폼별 비중 및 유튜브 분석")
