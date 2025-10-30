@@ -456,18 +456,27 @@ def main():
         sns_df = load_sns_data()
         
         if sns_df is not None:
+            # 디버깅: SNS 데이터의 지역 목록 표시
+            st.info(f"📍 SNS 데이터의 지역 목록: {', '.join(sns_df['region'].unique())}")
+            st.info(f"✅ 선택된 지역: {', '.join(selected_regions)}")
             # 필터링 적용
-            sns_filtered = sns_df[
-                (sns_df['region'].isin(selected_regions)) &
-                (sns_df['date'].notna())
-            ]
-            
             if len(date_range) == 2:
                 start_date, end_date = date_range
-                sns_filtered = sns_filtered[
-                    (sns_filtered['date'].dt.date >= start_date) &
-                    (sns_filtered['date'].dt.date <= end_date)
+                sns_filtered = sns_df[
+                    (sns_df['region'].isin(selected_regions)) &
+                    (sns_df['date'].notna()) &
+                    (sns_df['date'].dt.date >= start_date) &
+                    (sns_df['date'].dt.date <= end_date)
                 ]
+            else:
+                sns_filtered = sns_df[
+                    (sns_df['region'].isin(selected_regions)) &
+                    (sns_df['date'].notna())
+                ]
+            
+            # 선택된 지역만 표시되도록 데이터 확인
+            if len(sns_filtered) == 0:
+                st.warning(f"선택한 지역({', '.join(selected_regions)})에 대한 SNS 데이터가 없습니다.")
             
             # 주요 지표
             col1, col2, col3, col4 = st.columns(4)
