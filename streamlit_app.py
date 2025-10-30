@@ -251,11 +251,12 @@ def main():
                     x='month', 
                     y='ratio', 
                     color='region',
-                    title='월별 평균 검색 비율',
+                    title='월별 평균 검색 비율 (해당 월 전체 일수의 평균)',
                     markers=True
                 )
                 fig_monthly.update_xaxes(dtick=1)
                 st.plotly_chart(fig_monthly, use_container_width=True)
+                st.caption("💡 월별 평균값이므로, 특정 날짜의 최고점(예: 1월 1일=100.0)이 아닌 해당 월 전체의 평균을 나타냅니다.")
             
             with col2:
                 # 히트맵
