@@ -86,14 +86,16 @@ def get_basic_statistics(df):
 
 @st.cache_data
 def detect_peaks_cached(df):
-    """피크 탐지 (캐시됨)"""
+    """피크 탐지 (캐시됨)
+    피크: 검색량이 평소보다 현저히 높은 시점 (주요 이벤트, 특정 시기 등)
+    """
     pivot_df = df.pivot(index='date', columns='region', values='ratio').fillna(0)
     peak_results = {}
     
     for region in pivot_df.columns:
         data = pivot_df[region].values
-        threshold = np.mean(data) + 2 * np.std(data)
-        peaks, _ = find_peaks(data, height=threshold, distance=7)
+        threshold = np.mean(data) + 2.5 * np.std(data)  # 더 엄격한 기준
+        peaks, _ = find_peaks(data, height=threshold, distance=14)  # 2주 간격
         
         peak_results[region] = {
             'peak_count': len(peaks),
@@ -312,6 +314,10 @@ def main():
         
         with tab3:
             st.subheader("주요 검색 피크 분석")
+            st.markdown("""
+            **피크란?** 검색량이 평소보다 현저히 높은 시점을 의미합니다.  
+            주요 이벤트, 축제, 관광 시즌 등에서 발생하며, 피크 시점을 분석하면 드론 라이트 쇼에 대한 관심이 언제 급증했는지 파악할 수 있습니다.
+            """)
             
             # 피크 탐지
             peaks = detect_peaks_cached(filtered_df)
@@ -367,7 +373,8 @@ def main():
                         y=peak_info['threshold'],
                         line_dash="dash",
                         line_color="gray",
-                        annotation_text=f"임계값: {peak_info['threshold']:.4f}"
+                        annotation_text=f"임계값 (평균+2.5σ): {peak_info['threshold']:.4f}",
+                        annotation_position="right"
                     )
                     
                     fig_peak.update_layout(
