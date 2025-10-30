@@ -77,7 +77,6 @@ def get_basic_statistics(df):
         stats_dict[region] = {
             '데이터 개수 (count)': len(region_data),
             '평균 (mean)': region_data.mean(),
-            '표준편차 (std)': region_data.std(),
             '최소값 (min)': region_data.min(),
             '최대값 (max)': region_data.max(),
             '중앙값 (median)': region_data.median(),
@@ -157,7 +156,7 @@ def main():
     # 분석 유형에 따른 화면 분리  
     if analysis_type == "🔍 네이버 검색 분석":
         # 네이버 검색 분석 화면
-        st.title("🚁 드론 라이트 쇼 검색 트렌드 분석")
+        st.title("드론 라이트 쇼 검색 트렌드 분석")
         st.markdown("### 네이버 데이터랩 기반 지역별 검색 패턴 분석")
         
         # 메인 대시보드
@@ -456,7 +455,7 @@ def main():
     
     else:
         # SNS 흐름 분석 화면
-        st.title("🚁 드론 라이트 쇼 검색 트렌드 분석")
+        st.title("드론 라이트 쇼 검색 트렌드 분석")
         st.markdown("### SNS 흐름 분석 (블로그 + 유튜브)")
         
         # SNS 데이터 로드
@@ -502,148 +501,210 @@ def main():
                     avg_views = sns_filtered[sns_filtered['platform'] == 'youtube']['views'].mean()
                     st.metric("평균 조회수", f"{avg_views:,.0f}")
             
-            # 1. 연도별 언급량 비교
-            st.markdown("### 📊 연도별 SNS 언급량 비교")
-            yearly_counts = sns_filtered.groupby(['region', 'year']).size().reset_index(name='count')
-            # year를 문자열로 변환하여 범례에 2023, 2024, 2025가 따로 표시되도록 함
-            yearly_counts['year'] = yearly_counts['year'].astype(str)
-            fig_yearly = px.bar(
-                yearly_counts,
-                x='region',
-                y='count',
-                color='year',
-                title='2023~2025 연도별 SNS 언급량',
-                barmode='group',
-                category_orders={'year': ['2023', '2024', '2025']}
-            )
-            # 막대 위 숫자 제거
-            fig_yearly.update_layout(height=500)
-            st.plotly_chart(fig_yearly, use_container_width=True)
+            st.divider()
             
-            # 2. 월별 트렌드
-            st.markdown("### 📈 월별 SNS 언급 트렌드")
-            monthly_counts = sns_filtered.groupby(['region', 'year', 'month']).size().reset_index(name='count')
+            # 탭으로 구성
+            sns_tab1, sns_tab2, sns_tab3, sns_tab4, sns_tab5 = st.tabs([
+                "📈 시계열 트렌드",
+                "📊 월별 패턴",
+                "🔥 피크 분석",
+                "📋 통계 요약",
+                "🎯 주요 이벤트"
+            ])
             
-            # 전체 월별 트렌드
-            fig_monthly_line = px.line(
-                monthly_counts,
-                x='month',
-                y='count',
-                color='region',
-                line_dash='year',
-                title='월별 언급량 추이',
-                markers=True
-            )
-            fig_monthly_line.update_xaxes(dtick=1)
-            fig_monthly_line.update_layout(height=500)
-            st.plotly_chart(fig_monthly_line, use_container_width=True)
-            
-            # 피크 시점 표시
-            peak_months = monthly_counts.loc[monthly_counts.groupby(['region', 'year'])['count'].idxmax()]
-            fig_peak = px.scatter(
-                peak_months,
-                x='month',
-                y='count',
-                color='region',
-                size='count',
-                title='피크 시점 분석',
-                text='year'
-            )
-            fig_peak.update_traces(textposition='top center')
-            fig_peak.update_layout(height=500)
-            st.plotly_chart(fig_peak, use_container_width=True)
-            
-            # 지역별 월별 트렌드 상세
-            st.markdown("#### 지역별 월별 트렌드 상세")
-            for region in selected_regions:
-                region_monthly = monthly_counts[monthly_counts['region'] == region]
-                if len(region_monthly) > 0:
-                    # year를 문자열로 변환
-                    region_monthly = region_monthly.copy()
-                    region_monthly['year_str'] = region_monthly['year'].astype(str)
-                    
-                    fig_region = px.line(
-                        region_monthly,
-                        x='month',
-                        y='count',
-                        color='year_str',
-                        title=f'{region} 월별 SNS 트렌드',
-                        markers=True,
-                        labels={'count': '언급량(건)', 'month': '월', 'year_str': '연도'},
-                        category_orders={'year_str': ['2023', '2024', '2025']}
-                    )
-                    fig_region.update_xaxes(dtick=1)
-                    fig_region.update_layout(height=400)
-                    st.plotly_chart(fig_region, use_container_width=True)
-            
-            # 3. 플랫폼별 비중
-            st.markdown("### 💬 플랫폼별 언급 비중")
-            platform_counts = sns_filtered.groupby(['region', 'platform']).size().reset_index(name='count')
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                fig_platform = px.bar(
-                    platform_counts,
+            with sns_tab1:
+                st.subheader("연도별 SNS 언급량 비교")
+                yearly_counts = sns_filtered.groupby(['region', 'year']).size().reset_index(name='count')
+                yearly_counts['year'] = yearly_counts['year'].astype(str)
+                fig_yearly = px.bar(
+                    yearly_counts,
                     x='region',
                     y='count',
-                    color='platform',
-                    title='플랫폼별 언급량 (블로그 vs 유튜브)',
-                    barmode='stack',
-                    color_discrete_map={'blog': '#1f77b4', 'youtube': '#ff7f0e'}
+                    color='year',
+                    title='2023~2025 연도별 SNS 언급량',
+                    barmode='group',
+                    category_orders={'year': ['2023', '2024', '2025']}
                 )
-                st.plotly_chart(fig_platform, use_container_width=True)
+                fig_yearly.update_layout(height=500)
+                st.plotly_chart(fig_yearly, use_container_width=True)
             
-            with col2:
-                # 플랫폼 비율 파이차트
-                platform_total = sns_filtered.groupby('platform').size().reset_index(name='count')
-                fig_pie = px.pie(
-                    platform_total,
-                    values='count',
-                    names='platform',
-                    title='전체 플랫폼 비율',
-                    color='platform',
-                    color_discrete_map={'blog': '#1f77b4', 'youtube': '#ff7f0e'}
-                )
-                st.plotly_chart(fig_pie, use_container_width=True)
-            
-            # 4. 유튜브 상세 분석 (조회수, 좋아요, 댓글)
-            youtube_data = sns_filtered[sns_filtered['platform'] == 'youtube'].copy()
-            
-            if len(youtube_data) > 0 and youtube_data['views'].sum() > 0:
-                st.markdown("### 🎥 유튜브 상세 분석")
+            with sns_tab2:
+                st.subheader("월별 SNS 언급 패턴")
+                monthly_counts = sns_filtered.groupby(['region', 'year', 'month']).size().reset_index(name='count')
                 
-                col1, col2, col3 = st.columns(3)
+                # 전체 월별 트렌드
+                fig_monthly_line = px.line(
+                    monthly_counts,
+                    x='month',
+                    y='count',
+                    color='region',
+                    line_dash='year',
+                    title='월별 언급량 추이',
+                    markers=True
+                )
+                fig_monthly_line.update_xaxes(dtick=1)
+                fig_monthly_line.update_layout(height=500)
+                st.plotly_chart(fig_monthly_line, use_container_width=True)
+                
+                # 지역별 월별 트렌드 상세
+                st.markdown("#### 지역별 월별 트렌드 상세")
+                for region in selected_regions:
+                    region_monthly = monthly_counts[monthly_counts['region'] == region]
+                    if len(region_monthly) > 0:
+                        region_monthly = region_monthly.copy()
+                        region_monthly['year_str'] = region_monthly['year'].astype(str)
+                        
+                        # 연도별로 다른 마커 스타일 적용
+                        fig_region = go.Figure()
+                        
+                        marker_symbols = {'2023': 'circle', '2024': 'square', '2025': 'diamond'}
+                        dash_styles = {'2023': 'solid', '2024': 'dash', '2025': 'dot'}
+                        
+                        for year_val in ['2023', '2024', '2025']:
+                            year_data = region_monthly[region_monthly['year_str'] == year_val]
+                            if len(year_data) > 0:
+                                fig_region.add_trace(go.Scatter(
+                                    x=year_data['month'],
+                                    y=year_data['count'],
+                                    mode='lines+markers',
+                                    name=f'{year_val}년',
+                                    marker=dict(size=10, symbol=marker_symbols[year_val]),
+                                    line=dict(dash=dash_styles[year_val], width=2)
+                                ))
+                        
+                        fig_region.update_xaxes(dtick=1, title='월')
+                        fig_region.update_yaxes(title='언급량(건)')
+                        fig_region.update_layout(
+                            title=f'{region} 월별 SNS 트렌드',
+                            height=400,
+                            hovermode='x unified'
+                        )
+                        st.plotly_chart(fig_region, use_container_width=True)
+            
+            with sns_tab3:
+                st.subheader("SNS 언급 피크 분석")
+                st.markdown("""
+                **피크란?** SNS 언급량이 평소보다 현저히 높은 시점을 의미합니다.  
+                주요 이벤트나 화제가 된 시기를 파악할 수 있습니다.
+                """)
+                
+                # 피크 시점 표시
+                peak_months = monthly_counts.loc[monthly_counts.groupby(['region', 'year'])['count'].idxmax()]
+                fig_peak = px.scatter(
+                    peak_months,
+                    x='month',
+                    y='count',
+                    color='region',
+                    size='count',
+                    title='월별 최고 언급 시점',
+                    text='year'
+                )
+                fig_peak.update_traces(textposition='top center')
+                fig_peak.update_layout(height=500)
+                st.plotly_chart(fig_peak, use_container_width=True)
+                
+                # 지역별 피크 정보
+                st.markdown("#### 지역별 최고 언급 시점")
+                for region in selected_regions:
+                    region_peaks = peak_months[peak_months['region'] == region]
+                    if len(region_peaks) > 0:
+                        st.write(f"**{region}**")
+                        for _, peak in region_peaks.iterrows():
+                            st.write(f"  • {int(peak['year'])}년 {int(peak['month'])}월: {int(peak['count'])}건")
+            
+            with sns_tab4:
+                st.subheader("SNS 기본 통계")
+                
+                # 지역별 통계
+                for region in selected_regions:
+                    region_data = sns_filtered[sns_filtered['region'] == region]
+                    if len(region_data) > 0:
+                        st.markdown(f"### {region}")
+                        
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            st.metric("총 언급 수", f"{len(region_data):,}건")
+                        with col2:
+                            blog_pct = len(region_data[region_data['platform'] == 'blog']) / len(region_data) * 100
+                            st.metric("블로그 비율", f"{blog_pct:.1f}%")
+                        with col3:
+                            youtube_pct = len(region_data[region_data['platform'] == 'youtube']) / len(region_data) * 100
+                            st.metric("유튜브 비율", f"{youtube_pct:.1f}%")
+                        
+                        # 월별 평균
+                        monthly_avg = region_data.groupby('month').size().mean()
+                        st.write(f"월평균 언급량: **{monthly_avg:.1f}건**")
+            
+            with sns_tab5:
+                st.subheader("플랫폼별 비중 및 유튜브 분석")
+                
+                # 플랫폼별 비중
+                st.markdown("### 💬 플랫폼별 언급 비중")
+                platform_counts = sns_filtered.groupby(['region', 'platform']).size().reset_index(name='count')
+                
+                col1, col2 = st.columns(2)
                 
                 with col1:
-                    fig_views = px.box(
-                        youtube_data[youtube_data['views'] > 0],
+                    fig_platform = px.bar(
+                        platform_counts,
                         x='region',
-                        y='views',
-                        title='지역별 조회수 분포',
-                        log_y=True
+                        y='count',
+                        color='platform',
+                        title='플랫폼별 언급량 (블로그 vs 유튜브)',
+                        barmode='stack',
+                        color_discrete_map={'blog': '#1f77b4', 'youtube': '#ff7f0e'}
                     )
-                    st.plotly_chart(fig_views, use_container_width=True)
+                    st.plotly_chart(fig_platform, use_container_width=True)
                 
                 with col2:
-                    fig_likes = px.box(
-                        youtube_data[youtube_data['likes'] > 0],
-                        x='region',
-                        y='likes',
-                        title='지역별 좋아요 분포',
-                        log_y=True
+                    platform_total = sns_filtered.groupby('platform').size().reset_index(name='count')
+                    fig_pie = px.pie(
+                        platform_total,
+                        values='count',
+                        names='platform',
+                        title='전체 플랫폼 비율',
+                        color='platform',
+                        color_discrete_map={'blog': '#1f77b4', 'youtube': '#ff7f0e'}
                     )
-                    st.plotly_chart(fig_likes, use_container_width=True)
+                    st.plotly_chart(fig_pie, use_container_width=True)
                 
-                with col3:
-                    fig_comments = px.box(
-                        youtube_data[youtube_data['comments'] > 0],
-                        x='region',
-                        y='comments',
-                        title='지역별 댓글 수 분포',
-                        log_y=True
-                    )
-                    st.plotly_chart(fig_comments, use_container_width=True)
+                # 유튜브 상세 분석
+                youtube_data = sns_filtered[sns_filtered['platform'] == 'youtube'].copy()
+                
+                if len(youtube_data) > 0 and youtube_data['views'].sum() > 0:
+                    st.markdown("### 🎥 유튜브 상세 분석")
+                    
+                    col1, col2, col3 = st.columns(3)
+                    
+                    with col1:
+                        fig_views = px.box(
+                            youtube_data[youtube_data['views'] > 0],
+                            x='region',
+                            y='views',
+                            title='지역별 조회수 분포',
+                            log_y=True
+                        )
+                        st.plotly_chart(fig_views, use_container_width=True)
+                    
+                    with col2:
+                        fig_likes = px.box(
+                            youtube_data[youtube_data['likes'] > 0],
+                            x='region',
+                            y='likes',
+                            title='지역별 좋아요 분포',
+                            log_y=True
+                        )
+                        st.plotly_chart(fig_likes, use_container_width=True)
+                    
+                    with col3:
+                        fig_comments = px.box(
+                            youtube_data[youtube_data['comments'] > 0],
+                            x='region',
+                            y='comments',
+                            title='지역별 댓글 수 분포',
+                            log_y=True
+                        )
+                        st.plotly_chart(fig_comments, use_container_width=True)
         
         else:
             st.info("SNS 데이터를 로드할 수 없습니다. data 폴더에 'sns_blog_youtube_with_reaction_2023_2025.csv' 파일을 추가해주세요.")
