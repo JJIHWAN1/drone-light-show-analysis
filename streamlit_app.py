@@ -456,9 +456,6 @@ def main():
         sns_df = load_sns_data()
         
         if sns_df is not None:
-            # 디버깅: SNS 데이터의 지역 목록 표시
-            st.info(f"📍 SNS 데이터의 지역 목록: {', '.join(sns_df['region'].unique())}")
-            st.info(f"✅ 선택된 지역: {', '.join(selected_regions)}")
             # 필터링 적용
             if len(date_range) == 2:
                 start_date, end_date = date_range
@@ -603,96 +600,7 @@ def main():
                 )
                 st.plotly_chart(fig_pie, use_container_width=True)
             
-            # 4. 포털 검색 vs SNS 언급 상관관계
-            st.markdown("### 🔗 포털 검색 vs SNS 언급 상관관계")
-            
-            # 월별 데이터 병합
-            sns_monthly = sns_filtered.groupby(['region', 'year', 'month']).size().reset_index(name='sns_count')
-            search_monthly = filtered_df.groupby(['region', 'year', 'month'])['ratio'].mean().reset_index()
-            
-            merged_data = pd.merge(
-                sns_monthly,
-                search_monthly,
-                on=['region', 'year', 'month'],
-                how='inner'
-            )
-            
-            if len(merged_data) > 0:
-                # 상관계수 계산
-                correlations = merged_data.groupby('region')[['sns_count', 'ratio']].corr().iloc[0::2, -1].reset_index()
-                correlations = correlations[correlations['level_1'] == 'ratio'][['region', 'ratio']]
-                correlations.columns = ['지역', '상관계수']
-                correlations['상관계수'] = correlations['상관계수'].round(3)
-                
-                col1, col2 = st.columns([1, 2])
-                
-                with col1:
-                    st.write("**상관계수 요약**")
-                    st.dataframe(correlations, hide_index=True)
-                    avg_corr = correlations['상관계수'].mean()
-                    st.metric("평균 상관계수", f"{avg_corr:.3f}")
-                
-                with col2:
-                    # 산점도
-                    fig_scatter = px.scatter(
-                        merged_data,
-                        x='ratio',
-                        y='sns_count',
-                        color='region',
-                        size='sns_count',
-                        title='검색 비율 vs SNS 언급량',
-                        trendline='ols',
-                        labels={'ratio': '검색 비율', 'sns_count': 'SNS 언급량'}
-                    )
-                    st.plotly_chart(fig_scatter, use_container_width=True)
-                
-                # 5. 이중축 그래프 (지역별)
-                st.markdown("### 📊 검색 트렌드 vs SNS 언급 트렌드 (이중축)")
-                
-                for region in selected_regions:
-                    region_merged = merged_data[merged_data['region'] == region].sort_values(['year', 'month'])
-                    
-                    if len(region_merged) > 0:
-                        # 날짜 문자열 생성
-                        region_merged['date_str'] = region_merged['year'].astype(str) + '-' + region_merged['month'].astype(str).str.zfill(2)
-                        
-                        fig_dual = make_subplots(specs=[[{"secondary_y": True}]])
-                        
-                        # SNS 언급량
-                        fig_dual.add_trace(
-                            go.Scatter(
-                                x=region_merged['date_str'],
-                                y=region_merged['sns_count'],
-                                name='SNS 언급량',
-                                line=dict(color='#1f77b4', width=2),
-                                marker=dict(size=8)
-                            ),
-                            secondary_y=False
-                        )
-                        
-                        # 검색 비율
-                        fig_dual.add_trace(
-                            go.Scatter(
-                                x=region_merged['date_str'],
-                                y=region_merged['ratio'],
-                                name='검색 비율',
-                                line=dict(color='#ff7f0e', width=2, dash='dash'),
-                                marker=dict(size=8, symbol='x')
-                            ),
-                            secondary_y=True
-                        )
-                        
-                        fig_dual.update_xaxes(title_text="기간")
-                        fig_dual.update_yaxes(title_text="SNS 언급량", secondary_y=False)
-                        fig_dual.update_yaxes(title_text="검색 비율", secondary_y=True)
-                        fig_dual.update_layout(
-                            title=f"{region} - 검색 트렌드 vs SNS 언급 트렌드",
-                            height=400
-                        )
-                        
-                        st.plotly_chart(fig_dual, use_container_width=True)
-            
-            # 6. 유튜브 상세 분석 (조회수, 좋아요, 댓글)
+            # 4. 유튜브 상세 분석 (조회수, 좋아요, 댓글)
             youtube_data = sns_filtered[sns_filtered['platform'] == 'youtube'].copy()
             
             if len(youtube_data) > 0 and youtube_data['views'].sum() > 0:
