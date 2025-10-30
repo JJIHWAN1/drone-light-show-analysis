@@ -298,7 +298,7 @@ def main():
                     x='month', 
                     y='ratio', 
                     color='region',
-                    title='월별 평균 검색 비율 (원본 데이터)',
+                    title='월별 평균 검색 비율',
                     markers=True,
                     color_discrete_map=region_colors
                 )
@@ -597,58 +597,36 @@ def main():
             
             with sns_tab2:
                 st.subheader("월별 SNS 언급 패턴")
-                monthly_counts = sns_filtered.groupby(['region', 'year', 'month']).size().reset_index(name='count')
                 
-                # 전체 월별 트렌드 (개선된 버전)
-                st.markdown("#### 월별 언급량 추이")
-                
-                # 지역별/연도별로 구분 가능하게 그래프 생성
-                fig_monthly_line = go.Figure()
-                
-                # 색상과 마커 정의 (네이버 검색 분석과 동일한 색상)
-                color_map = {
+                # 지역별 색상 매핑
+                region_colors = {
                     '고흥·녹동항': '#636EFA',  # 파란색
                     '당진·삽교호': '#EF553B',  # 빨간색
                     '부산·광안리': '#00CC96'   # 초록색
                 }
                 
-                marker_symbols = {'2023': 'circle', '2024': 'square', '2025': 'diamond'}
-                dash_styles = {'2023': 'solid', '2024': 'solid', '2025': 'solid'}
+                # 월별 평균 (3년 통합)
+                monthly_avg_sns = sns_filtered.groupby(['region', 'month']).size().reset_index(name='count')
                 
-                for region in selected_regions:
-                    region_data = monthly_counts[monthly_counts['region'] == region]
-                    region_color = color_map.get(region, '#333333')
-                    
-                    for year_val in ['2023', '2024', '2025']:
-                        year_data = region_data[region_data['year'] == int(year_val)]
-                        if len(year_data) > 0:
-                            fig_monthly_line.add_trace(go.Scatter(
-                                x=year_data['month'],
-                                y=year_data['count'],
-                                mode='lines+markers',
-                                name=f'{region} ({year_val})',
-                                marker=dict(size=10, symbol=marker_symbols[year_val]),
-                                line=dict(dash=dash_styles[year_val], width=2.5, color=region_color)
-                            ))
-                
-                fig_monthly_line.update_xaxes(dtick=1, title='월')
-                fig_monthly_line.update_yaxes(title='언급량(건)')
-                fig_monthly_line.update_layout(
-                    title='월별 언급량 추이 (지역별·연도별)',
-                    height=600,
-                    hovermode='x unified',
-                    legend=dict(
-                        orientation="v",
-                        yanchor="top",
-                        y=1,
-                        xanchor="left",
-                        x=1.02
-                    )
+                fig_monthly_sns = px.line(
+                    monthly_avg_sns,
+                    x='month',
+                    y='count',
+                    color='region',
+                    title='월별 평균 언급량 (2023~2025)',
+                    markers=True,
+                    labels={'month': '월', 'count': '언급량(건)', 'region': '지역'},
+                    color_discrete_map=region_colors
                 )
-                st.plotly_chart(fig_monthly_line, use_container_width=True)
+                fig_monthly_sns.update_xaxes(dtick=1)
+                fig_monthly_sns.update_layout(height=500)
+                st.plotly_chart(fig_monthly_sns, use_container_width=True)
+                st.caption("💡 2023~2025년 3개년의 동일 월 데이터를 모두 합쳐서 평균낸 값입니다.")
                 
-                # 지역별 월별 트렌드 상세
-                st.markdown("#### 지역별 월별 트렌드 상세")
+                # 지역별 월별 트렌드 상세 (연도별 비교)
+                st.markdown("#### 지역별 월별 트렌드 상세 (연도별)")
+                monthly_counts = sns_filtered.groupby(['region', 'year', 'month']).size().reset_index(name='count')
+                
                 for region in selected_regions:
                     region_monthly = monthly_counts[monthly_counts['region'] == region]
                     if len(region_monthly) > 0:
