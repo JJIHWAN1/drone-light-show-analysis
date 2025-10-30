@@ -373,11 +373,19 @@ def main():
                     max_peak_value = max(all_peak_values) if all_peak_values else 0
                     st.metric("최고 피크 값", f"{max_peak_value:.4f}")
             
+            # 지역별 색상 매핑
+            region_colors = {
+                '고흥·녹동항': '#636EFA',  # 파란색
+                '당진·삽교호': '#EF553B',  # 빨간색
+                '부산·광안리': '#00CC96'   # 초록색
+            }
+            
             # 지역별 피크 차트
             for region in selected_regions:
                 if region in peaks:
                     peak_info = peaks[region]
                     region_data = filtered_df[filtered_df['region'] == region]
+                    region_color = region_colors.get(region, '#636EFA')
                     
                     fig_peak = go.Figure()
                     
@@ -387,7 +395,7 @@ def main():
                         y=region_data['ratio'],
                         mode='lines',
                         name=f'{region} 트렌드',
-                        line=dict(width=2)
+                        line=dict(width=2, color=region_color)
                     ))
                     
                     # 피크 포인트
@@ -397,7 +405,7 @@ def main():
                             y=peak_info['peak_values'],
                             mode='markers',
                             name=f'피크 ({peak_info["peak_count"]}개)',
-                            marker=dict(size=10, color='red', symbol='star')
+                            marker=dict(size=10, color=region_color, symbol='star')
                         ))
                     
                     # 임계값 선
@@ -605,7 +613,7 @@ def main():
                 }
                 
                 marker_symbols = {'2023': 'circle', '2024': 'square', '2025': 'diamond'}
-                dash_styles = {'2023': 'solid', '2024': 'dash', '2025': 'dot'}
+                dash_styles = {'2023': 'solid', '2024': 'solid', '2025': 'solid'}
                 
                 for region in selected_regions:
                     region_data = monthly_counts[monthly_counts['region'] == region]
@@ -651,7 +659,7 @@ def main():
                         fig_region = go.Figure()
                         
                         marker_symbols = {'2023': 'circle', '2024': 'square', '2025': 'diamond'}
-                        dash_styles = {'2023': 'solid', '2024': 'dash', '2025': 'dot'}
+                        dash_styles = {'2023': 'solid', '2024': 'solid', '2025': 'solid'}
                         
                         for year_val in ['2023', '2024', '2025']:
                             year_data = region_monthly[region_monthly['year_str'] == year_val]
@@ -681,6 +689,13 @@ def main():
                 주요 이벤트나 화제가 된 시기를 파악할 수 있습니다.
                 """)
                 
+                # 지역별 색상 매핑
+                region_colors = {
+                    '고흥·녹동항': '#636EFA',  # 파란색
+                    '당진·삽교호': '#EF553B',  # 빨간색
+                    '부산·광안리': '#00CC96'   # 초록색
+                }
+                
                 # 피크 시점 표시
                 peak_months = monthly_counts.loc[monthly_counts.groupby(['region', 'year'])['count'].idxmax()]
                 fig_peak = px.scatter(
@@ -690,7 +705,8 @@ def main():
                     color='region',
                     size='count',
                     title='월별 최고 언급 시점',
-                    text='year'
+                    text='year',
+                    color_discrete_map=region_colors
                 )
                 fig_peak.update_traces(textposition='top center')
                 fig_peak.update_layout(height=500)
