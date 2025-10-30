@@ -237,6 +237,39 @@ def main():
                 )
                 fig_naver_yearly.update_layout(height=500)
                 st.plotly_chart(fig_naver_yearly, use_container_width=True)
+                
+                # 지역별 월별 트렌드 (연도별 변화 비교)
+                st.markdown("### 📈 지역별 월별 트렌드 (연도별 비교)")
+                st.caption("💡 각 지역의 연도별 월별 패턴 변화를 비교합니다. 3개 지역 모두 선택 시 패턴 차이가 크므로, 개별 지역 선택을 권장합니다.")
+                
+                monthly_ratio = filtered_df.groupby(['region', 'year', 'month'])['ratio'].mean().reset_index()
+                
+                for region in selected_regions:
+                    region_monthly = monthly_ratio[monthly_ratio['region'] == region]
+                    if len(region_monthly) > 0:
+                        region_monthly = region_monthly.copy()
+                        region_monthly['year_str'] = region_monthly['year'].astype(str)
+                        
+                        # 해당 지역의 최댓값으로 정규화 (0~100)
+                        region_max = region_monthly['ratio'].max()
+                        if region_max > 0:
+                            region_monthly['ratio_normalized'] = (region_monthly['ratio'] / region_max) * 100
+                        else:
+                            region_monthly['ratio_normalized'] = 0
+                        
+                        fig_naver_region = px.line(
+                            region_monthly,
+                            x='month',
+                            y='ratio_normalized',
+                            color='year_str',
+                            title=f'{region} 월별 패턴 (정규화: 0~100)',
+                            markers=True,
+                            labels={'ratio_normalized': '정규화된 검색 비율', 'month': '월', 'year_str': '연도'},
+                            category_orders={'year_str': ['2023', '2024', '2025']}
+                        )
+                        fig_naver_region.update_xaxes(dtick=1)
+                        fig_naver_region.update_layout(height=400)
+                        st.plotly_chart(fig_naver_region, use_container_width=True)
         
         with tab2:
             st.subheader("월별 검색 패턴")
@@ -290,59 +323,14 @@ def main():
             
             # 검색 비율 계산 방법 설명
             st.info("""
-            **📊 검색 비율 계산 방법**
+            **📊 데이터 해석 안내**
             
-            **상단 차트 (월별 평균, 히트맵, 계절별): 원본 데이터**
+            모든 차트는 네이버 데이터랩의 원본 값을 사용합니다. 
             
-            네이버 데이터랩의 원본 값을 그대로 사용합니다. 부산·광안리는 고흥·녹동항보다 약 19배 많은 검색량을 기록하므로, 차트에서 부산이 압도적으로 높게 표시됩니다. 이를 통해 지역 간 절대적 검색량 차이를 비교할 수 있습니다.
-            
-            **하단 차트 (지역별 월별 트렌드): 정규화 데이터**
-            
-            각 지역의 월별 패턴을 명확히 비교하기 위해, 각 지역별로 자체 최댓값을 100으로 정규화했습니다.
-            
-            • 고흥·녹동항: 고흥의 최댓값을 100으로 변환 (원본 최댓값: 1.44)
-            
-            • 당진·삽교호: 당진의 최댓값을 100으로 변환 (원본 최댓값: 3.45)
-            
-            • 부산·광안리: 부산의 최댓값을 100으로 변환 (원본 최댓값: 100.0)
-            
-            **차트 해석 예시**
-            
-            고흥의 9월 값이 80이라면, 고흥의 최고점 대비 80% 수준으로 고흥의 상대적 성수기임을 의미합니다. 이는 부산과의 절대적 검색량 비교가 아닌, 고흥 내에서의 시기별 변화 패턴을 나타냅니다.
+            • 부산·광안리는 고흥·녹동항보다 약 19배 많은 검색량을 기록합니다.
+            • 차트에서 부산이 압도적으로 높게 표시되는 것은 실제 검색량 차이를 반영한 것입니다.
+            • 개별 지역만 선택하면 해당 지역의 월별 패턴을 더 명확히 확인할 수 있습니다.
             """)
-            
-            # 네이버 검색 월별 트렌드 (지역별) - 정규화 적용
-            st.markdown("### 📈 네이버 검색 월별 트렌드 (지역별)")
-            st.caption("💡 각 지역의 패턴을 명확히 비교하기 위해, 각 지역별로 자체 최댓값을 100으로 정규화했습니다.")
-            
-            monthly_ratio = filtered_df.groupby(['region', 'year', 'month'])['ratio'].mean().reset_index()
-            
-            for region in selected_regions:
-                region_monthly = monthly_ratio[monthly_ratio['region'] == region]
-                if len(region_monthly) > 0:
-                    region_monthly = region_monthly.copy()
-                    region_monthly['year_str'] = region_monthly['year'].astype(str)
-                    
-                    # 해당 지역의 최댓값으로 정규화 (0~100)
-                    region_max = region_monthly['ratio'].max()
-                    if region_max > 0:
-                        region_monthly['ratio_normalized'] = (region_monthly['ratio'] / region_max) * 100
-                    else:
-                        region_monthly['ratio_normalized'] = 0
-                    
-                    fig_naver_region = px.line(
-                        region_monthly,
-                        x='month',
-                        y='ratio_normalized',
-                        color='year_str',
-                        title=f'{region} 월별 패턴 (정규화: 0~100)',
-                        markers=True,
-                        labels={'ratio_normalized': '정규화된 검색 비율', 'month': '월', 'year_str': '연도'},
-                        category_orders={'year_str': ['2023', '2024', '2025']}
-                    )
-                    fig_naver_region.update_xaxes(dtick=1)
-                    fig_naver_region.update_layout(height=400)
-                    st.plotly_chart(fig_naver_region, use_container_width=True)
         
         with tab3:
             st.subheader("주요 검색 피크 분석")
